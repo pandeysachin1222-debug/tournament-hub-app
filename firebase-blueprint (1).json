@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "Tournament": {
+      "title": "Tournament",
+      "description": "A gaming tournament document",
+      "type": "object",
+      "properties": {
+        "gameName": { "type": "string", "description": "Title of the tournament" },
+        "mode": { "type": "string", "description": "Game mode (e.g., Solo, Duo, Squad)" },
+        "map": { "type": "string", "description": "Map name" },
+        "prizePool": { "type": "number", "description": "Total prize pool in INR" },
+        "entryFee": { "type": "number", "description": "Entry fee in INR" },
+        "perKill": { "type": "number", "description": "Prize per kill in INR" },
+        "totalPlayers": { "type": "number", "description": "Maximum number of players" },
+        "joinedPlayers": { "type": "number", "description": "Number of players who have joined" },
+        "roomId": { "type": "string", "description": "Room ID for the match" },
+        "roomPass": { "type": "string", "description": "Room Password for the match" },
+        "imageURL": { "type": "string", "description": "URL of the tournament image" },
+        "matchTime": { "type": "string", "format": "date-time", "description": "Time of the match" },
+        "status": { "type": "string", "enum": ["upcoming", "live", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["gameName", "mode", "map", "prizePool", "entryFee", "perKill", "totalPlayers", "joinedPlayers", "matchTime", "status"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "balance": { "type": "number" },
+        "totalEarnings": { "type": "number" },
+        "weeklyEarnings": { "type": "number" },
+        "monthlyEarnings": { "type": "number" },
+        "totalMatches": { "type": "number" },
+        "totalWins": { "type": "number" },
+        "upiId": { "type": "string" }
+      },
+      "required": ["displayName", "email", "role"]
+    },
+    "Wallet": {
+      "title": "Wallet",
+      "description": "User wallet information",
+      "type": "object",
+      "properties": {
+        "balance": { "type": "number", "description": "Current balance in INR" }
+      },
+      "required": ["balance"]
+    },
+    "Result": {
+      "title": "Result",
+      "description": "A player's result in a tournament",
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string" },
+        "userId": { "type": "string" },
+        "position": { "type": "number" },
+        "kills": { "type": "number" },
+        "prize": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tournamentId", "userId", "position", "kills", "prize", "createdAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["win", "deposit", "join"] },
+        "status": { "type": "string", "enum": ["success", "pending", "failed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "tournamentId": { "type": "string" }
+      },
+      "required": ["userId", "amount", "type", "status", "createdAt"]
+    },
+    "RechargeRequest": {
+      "title": "RechargeRequest",
+      "description": "A request for a balance recharge",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "amount": { "type": "number" },
+        "transactionId": { "type": "string", "description": "12-digit UPI Transaction ID / UTR" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "transactionId", "status", "createdAt"]
+    },
+    "WithdrawRequest": {
+      "title": "WithdrawRequest",
+      "description": "A request for a balance withdrawal",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "amount": { "type": "number" },
+        "upiId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "upiId", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "tournaments": {
+      "schema": "Tournament",
+      "description": "Collection of all tournaments"
+    },
+    "users": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "wallet": {
+      "schema": "Wallet",
+      "description": "Collection of user wallets"
+    },
+    "results": {
+      "schema": "Result",
+      "description": "Collection of match results"
+    },
+    "transactions": {
+      "schema": "Transaction",
+      "description": "Collection of all transactions"
+    },
+    "rechargeRequests": {
+      "schema": "RechargeRequest",
+      "description": "Collection of recharge requests"
+    },
+    "withdrawRequests": {
+      "schema": "WithdrawRequest",
+      "description": "Collection of withdrawal requests"
+    }
+  }
+}
