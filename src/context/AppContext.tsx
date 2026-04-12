@@ -87,13 +87,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 const updated = sorted.map((t: any) => {
   const start = new Date(t.startTime);
 
+  // ⏱️ Duration (IMPORTANT)
+  const durationHours = 2; // 👈 tu change kar sakta hai (2 hour match)
+  const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+
   let status = "upcoming";
 
-  if (start <= now) {
+  if (now >= start && now <= end) {
     status = "ongoing";
-  }
-
-  if (t.resultDeclared) {
+  } else if (now > end) {
     status = "completed";
   }
 
@@ -101,6 +103,10 @@ const updated = sorted.map((t: any) => {
     ...t,
     status
   };
+});
+
+setTournaments(updated);
+
 });
 
 setTournaments(updated);
