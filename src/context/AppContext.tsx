@@ -82,7 +82,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
       });
 
-      setTournaments(sorted);
+      const now = new Date();
+
+const updated = sorted.map((t: any) => {
+  const start = new Date(t.startTime);
+
+  let status = "upcoming";
+
+  if (start <= now) {
+    status = "ongoing";
+  }
+
+  if (t.resultDeclared) {
+    status = "completed";
+  }
+
+  return {
+    ...t,
+    status
+  };
+});
+
+setTournaments(updated);
     });
 
     return () => unsubscribe();
