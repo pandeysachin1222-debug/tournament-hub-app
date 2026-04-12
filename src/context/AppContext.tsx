@@ -82,27 +82,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
       });
 
-      const now = new Date();
+     const now = new Date();
 
 const updated = sorted.map((t: any) => {
-  const start = new Date(t.startTime);
+  // ✅ FIX: Timestamp → Date
+  let start = t.matchTime?.toDate 
+    ? t.matchTime.toDate() 
+    : new Date(t.matchTime);
 
-  // ⏱️ Duration (IMPORTANT)
-  const durationHours = 2; // 👈 tu change kar sakta hai (2 hour match)
-  const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+  // 🔥 AUTO NEXT DAY LOOP (IMPORTANT FIX)
+  if (t.isRecurring) {
+    while (start < now) {
+      start.setDate(start.getDate() + 1);
+    }
+  }
 
   let status = "upcoming";
 
-  if (now >= start && now <= end) {
+  if (start <= now) {
     status = "ongoing";
-  } else if (now > end) {
+  }
+
+  if (t.resultDeclared) {
     status = "completed";
   }
 
   return {
     ...t,
+    matchTime: start,
     status
   };
+});
+
+setTournaments(updated);
 });
 
 setTournaments(updated);
