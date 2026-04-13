@@ -82,8 +82,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
       });
 
-    // ✅ TOURNAMENT LIVE (FINAL FIXED)
-useEffect(() => {
+    useEffect(() => {
   const q = query(collection(db, 'tournaments'));
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -95,30 +94,20 @@ useEffect(() => {
     const now = new Date();
 
     const updated = list.map((t: any) => {
-      // ✅ Timestamp fix
       let start = t.matchTime?.toDate
         ? t.matchTime.toDate()
         : new Date(t.matchTime);
 
-      // 🔥 AUTO NEXT DAY (RECURRING)
       if (t.isRecurring) {
         while (start < now) {
           start.setDate(start.getDate() + 1);
         }
       }
 
-      // 🔥 STATUS LOGIC
       let status = "upcoming";
+      if (start <= now) status = "ongoing";
+      if (t.resultDeclared) status = "completed";
 
-      if (start <= now) {
-        status = "ongoing";
-      }
-
-      if (t.resultDeclared) {
-        status = "completed";
-      }
-
-      // 🔥 AUTO JOIN CLOSE (15 min before)
       let joinStatus = "open";
       const closeTime = new Date(start.getTime() - 15 * 60 * 1000);
 
@@ -126,19 +115,13 @@ useEffect(() => {
         joinStatus = "closed";
       }
 
-      // 🔥 FAKE PLAYERS
       let fakePlayers = 0;
       const diffMinutes = (start.getTime() - now.getTime()) / (1000 * 60);
 
-      if (diffMinutes > 60) {
-        fakePlayers = Math.floor(Math.random() * 5);
-      } else if (diffMinutes > 30) {
-        fakePlayers = Math.floor(Math.random() * 15) + 5;
-      } else if (diffMinutes > 10) {
-        fakePlayers = Math.floor(Math.random() * 30) + 20;
-      } else {
-        fakePlayers = Math.floor(Math.random() * 50) + 40;
-      }
+      if (diffMinutes > 60) fakePlayers = Math.floor(Math.random() * 5);
+      else if (diffMinutes > 30) fakePlayers = Math.floor(Math.random() * 15) + 5;
+      else if (diffMinutes > 10) fakePlayers = Math.floor(Math.random() * 30) + 20;
+      else fakePlayers = Math.floor(Math.random() * 50) + 40;
 
       const totalJoined = (t.joinedPlayers || 0) + fakePlayers;
 
