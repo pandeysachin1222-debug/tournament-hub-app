@@ -67,25 +67,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => unsubscribe();
   }, [user]);
 
-  // ✅ TOURNAMENT LIVE (IMPORTANT FIX)
-  useEffect(() => {
-    const q = query(collection(db, 'tournaments'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      // 🔥 SORT FIX (date string support)
-      const sorted = list.sort((a: any, b: any) => {
-        return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
-      });
-
-    useEffect(() => {
+// ✅ TOURNAMENT LIVE (ULTIMATE FIX)
+useEffect(() => {
   const q = query(collection(db, 'tournaments'));
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
+  const unsubscribe = onSnapshot(q, async (snapshot) => {
     const list = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -93,46 +79,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const now = new Date();
 
-    const updated = list.map((t: any) => {
+    const updated = await Promise.all(list.map(async (t: any) => {
+      
+      // ✅ TIME FIX (Firestore Timestamp → Date)
       let start = t.matchTime?.toDate
         ? t.matchTime.toDate()
         : new Date(t.matchTime);
 
+      // ✅ MATCH END TIME (30 min match)
+      const end = new Date(start.getTime() + 30 * 60 * 1000);
+
+      // 🔥 AUTO NEXT DAY (RECURRING)
       if (t.isRecurring) {
         while (start < now) {
           start.setDate(start.getDate() + 1);
         }
       }
 
+      // ✅ STATUS FIX (IMPORTANT)
       let status = "upcoming";
-      if (start <= now) status = "ongoing";
-      if (t.resultDeclared) status = "completed";
 
+      if (now >= start && now <= end) {
+        status = "ongoing";
+      } else if (now > end) {
+        status = "completed";
+      }
+
+      // 🔥 JOIN SYSTEM (24 hrs open)
       let joinStatus = "open";
-      const closeTime = new Date(start.getTime() - 15 * 60 * 1000);
+      const joinCloseTime = new Date(start.getTime() - 15 * 60 * 1000);
 
-      if (now >= closeTime) {
+      if (now >= joinCloseTime) {
         joinStatus = "closed";
       }
 
-      let fakePlayers = 0;
-      const diffMinutes = (start.getTime() - now.getTime()) / (1000 * 60);
+      // 🔥 AUTO ROOM ID (15 min before)
+      let roomId = t.roomId || "";
+      let roomPass = t.roomPass || "";
 
-      if (diffMinutes > 60) fakePlayers = Math.floor(Math.random() * 5);
-      else if (diffMinutes > 30) fakePlayers = Math.floor(Math.random() * 15) + 5;
-      else if (diffMinutes > 10) fakePlayers = Math.floor(Math.random() * 30) + 20;
+      if (!roomId && now >= joinCloseTime) {
+        roomId = "ROOM" + Math.floor(100000 + Math.random() * 900000);
+      }
+
+      // 🔥 AUTO PASSWORD (10 min before)
+      const passTime = new Date(start.getTime() - 10 * 60 * 1000);
+
+      if (!roomPass && now >= passTime) {
+        roomPass = "PASS" + Math.floor(1000 + Math.random() * 9000);
+      }
+
+      // 🔥 SAVE ON FIREBASE (IMPORTANT)
+      if (roomId !== t.roomId || roomPass !== t.roomPass) {
+        await updateDoc(doc(db, "tournaments", t.id), {
+          roomId,
+          roomPass
+        });
+      }
+
+      // 🔥 FAKE PLAYERS LOGIC
+      let fakePlayers = 0;
+      const diff = (start.getTime() - now.getTime()) / (1000 * 60);
+
+      if (diff > 60) fakePlayers = Math.floor(Math.random() * 5);
+      else if (diff > 30) fakePlayers = Math.floor(Math.random() * 15) + 5;
+      else if (diff > 10) fakePlayers = Math.floor(Math.random() * 30) + 20;
       else fakePlayers = Math.floor(Math.random() * 50) + 40;
 
-      const totalJoined = (t.joinedPlayers || 0) + fakePlayers;
+      const totalPlayers = (t.joinedPlayers || 0) + fakePlayers;
 
       return {
         ...t,
         matchTime: start,
         status,
         joinStatus,
-        displayPlayers: totalJoined
+        displayPlayers: totalPlayers,
+        roomId,
+        roomPass
       };
-    });
+    }));
 
     setTournaments(updated);
   });
