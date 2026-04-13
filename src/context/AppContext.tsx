@@ -82,44 +82,80 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
       });
 
-     const now = new Date();
+    // ✅ TOURNAMENT LIVE (FINAL FIXED)
+useEffect(() => {
+  const q = query(collection(db, 'tournaments'));
 
-const updated = sorted.map((t: any) => {
-  // ✅ FIX: Timestamp → Date
-  let start = t.matchTime?.toDate 
-    ? t.matchTime.toDate() 
-    : new Date(t.matchTime);
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const list = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-  // 🔥 AUTO NEXT DAY LOOP (IMPORTANT FIX)
-  if (t.isRecurring) {
-    while (start < now) {
-      start.setDate(start.getDate() + 1);
-    }
-  }
+    const now = new Date();
 
-  let status = "upcoming";
+    const updated = list.map((t: any) => {
+      // ✅ Timestamp fix
+      let start = t.matchTime?.toDate
+        ? t.matchTime.toDate()
+        : new Date(t.matchTime);
 
-  if (start <= now) {
-    status = "ongoing";
-  }
+      // 🔥 AUTO NEXT DAY (RECURRING)
+      if (t.isRecurring) {
+        while (start < now) {
+          start.setDate(start.getDate() + 1);
+        }
+      }
 
-  if (t.resultDeclared) {
-    status = "completed";
-  }
+      // 🔥 STATUS LOGIC
+      let status = "upcoming";
 
-  return {
-    ...t,
-    matchTime: start,
-    status
-  };
-});
+      if (start <= now) {
+        status = "ongoing";
+      }
 
-setTournaments(updated);
-});
+      if (t.resultDeclared) {
+        status = "completed";
+      }
 
+      // 🔥 AUTO JOIN CLOSE (15 min before)
+      let joinStatus = "open";
+      const closeTime = new Date(start.getTime() - 15 * 60 * 1000);
 
-    return () => unsubscribe();
-  }, []);
+      if (now >= closeTime) {
+        joinStatus = "closed";
+      }
+
+      // 🔥 FAKE PLAYERS
+      let fakePlayers = 0;
+      const diffMinutes = (start.getTime() - now.getTime()) / (1000 * 60);
+
+      if (diffMinutes > 60) {
+        fakePlayers = Math.floor(Math.random() * 5);
+      } else if (diffMinutes > 30) {
+        fakePlayers = Math.floor(Math.random() * 15) + 5;
+      } else if (diffMinutes > 10) {
+        fakePlayers = Math.floor(Math.random() * 30) + 20;
+      } else {
+        fakePlayers = Math.floor(Math.random() * 50) + 40;
+      }
+
+      const totalJoined = (t.joinedPlayers || 0) + fakePlayers;
+
+      return {
+        ...t,
+        matchTime: start,
+        status,
+        joinStatus,
+        displayPlayers: totalJoined
+      };
+    });
+
+    setTournaments(updated);
+  });
+
+  return () => unsubscribe();
+}, []);
 
   // ✅ USER RESULTS FIX (IMPORTANT)
   useEffect(() => {
