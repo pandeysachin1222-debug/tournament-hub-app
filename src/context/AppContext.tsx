@@ -117,12 +117,6 @@ const updated = sorted.map((t: any) => {
 setTournaments(updated);
 });
 
-setTournaments(updated);
-
-});
-
-setTournaments(updated);
-    });
 
     return () => unsubscribe();
   }, []);
